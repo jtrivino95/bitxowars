@@ -25,6 +25,7 @@ public class Bitxo1 extends Agent
     @Override
     public void inicia()
     {
+	int x = 10;
         setAngleVisors(30);
         setDistanciaVisors(350);
         setVelocitatLineal(5);
