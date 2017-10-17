@@ -1,7 +1,7 @@
 package agents;
 
 // Exemple de Bitxo
-public class Bitxo2 extends Agent
+public class Bitxo3 extends Agent
 {
     static final boolean DEBUG = false;
 
@@ -19,7 +19,7 @@ public class Bitxo2 extends Agent
     private Estat estat;
     private int espera = 0;
 
-    public Bitxo2(Agents pare) {
+    public Bitxo3(Agents pare) {
         super(pare, "Bitxo2Grup20", "imatges/robotank2.gif");
     }
 
