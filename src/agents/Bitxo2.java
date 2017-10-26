@@ -112,17 +112,19 @@ public class Bitxo2 extends Agent
                         
                     int sector = estat.sector[mesProper];
                     
-                    if (sector == 2 || sector == 3)  // ben visible, puc saber la seva posició
-                    {
-                        mira(estat.posicioEnemic[mesProper].x, estat.posicioEnemic[mesProper].y);
-                    }
-                    else if (sector == 1)   // gira per situar el bitxo dins els sectors 2 o 3
-                    {
-                        dreta();
-                    }
-                    else
-                    {
-                        esquerra();
+                    switch (sector) {
+                    // ben visible, puc saber la seva posició
+                        case 2:
+                        case 3:
+                            mira(estat.posicioEnemic[mesProper].x, estat.posicioEnemic[mesProper].y);
+                            break;
+                    // gira per situar el bitxo dins els sectors 2 o 3
+                        case 1:
+                            dreta();
+                            break;
+                        default:
+                            esquerra();
+                            break;
                     }
                 }
                 
