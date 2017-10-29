@@ -20,7 +20,7 @@ public class Bitxo2 extends Agent
     private int espera = 0;
 
     public Bitxo2(Agents pare) {
-        super(pare, "Bitxo2Grup20", "imatges/robotank2.gif");
+        super(pare, "Bitxo2", "imatges/robotank2.gif");
     }
 
     @Override
@@ -36,6 +36,7 @@ public class Bitxo2 extends Agent
     @Override
     public void avaluaComportament()
     {
+        if(true) return;
         boolean enemic;
 
         enemic = false;
@@ -49,11 +50,11 @@ public class Bitxo2 extends Agent
         if (espera > 0) {  // no facis res, continua amb el que estaves fent
             espera--;
             return;
-    }
+        }
         else
         {
             atura();  // ens asseguram de que esteim aturats, preparats pel nou moviment
-    
+            
             // si veig un enemic en el visor central, dispara
             if (estat.objecteVisor[CENTRAL] == NAU) dispara();
             
