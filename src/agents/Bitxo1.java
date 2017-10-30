@@ -60,12 +60,12 @@ public class Bitxo1 extends Agent
     private int angulo;
     
     private final int BITXO_LADO = 25; 
-    private final int BITXO_ESPACIO = 10; 
+    private final int BITXO_ESPACIO = 35; 
     private final int MIN_DIST_ESQ = BITXO_LADO + BITXO_ESPACIO;
-    private final int MAX_ANGLE_GIR = 100;
+    private final int MAX_ANGLE_GIR = 30;
     private final int MIN_ANGLE_GIR = 1;
     private final int MAX_VECES_COLISION = 5;  
-    private final int MAX_ANGLE_VISOR = 30;
+    private final int MAX_ANGLE_VISOR = 20;
     private final int MIN_ANGLE_VISOR = 10;
     
     /*************************************************
@@ -94,7 +94,7 @@ public class Bitxo1 extends Agent
     public void inicia()
     {
         
-        setAngleVisors(MIN_ANGLE_GIR);
+        setAngleVisors(MAX_ANGLE_VISOR);
         setDistanciaVisors(350);
         setVelocitatLineal(5);
         setVelocitatAngular(9);
@@ -126,21 +126,22 @@ public class Bitxo1 extends Agent
              this.activaEscut();
         }
         
-        
-        
-                    
-        esquivarParedes();
-      
-        if(!paredCerca() && !inColissionFrontal()){
-            if(mirandoEnemigo && estat.objecteVisor[CENTRAL] == NAU && estat.distanciaVisors[CENTRAL] < estat.distanciaVisor ){
+        if(mirandoEnemigo  && estat.objecteVisor[CENTRAL] == NAU && estat.distanciaVisors[CENTRAL] < estat.distanciaVisor ){
                 if(estat.perforadores > 0){
                     this.perforadora();
                 }else{
                     this.dispara();
                 }
-                endavant();
-            }
-            if (mirandoRecurso){
+        }
+        
+                    
+        esquivarParedes();
+        
+        
+      
+        if(!paredCerca() && !inColissionFrontal() && !mirandoEnemigo){
+          
+            if (mirandoRecurso ){
                 endavant();
             }          
             if(recursoEncontrado()){
@@ -167,17 +168,7 @@ public class Bitxo1 extends Agent
             
             prev_impactesRebuts = estat.impactesRebuts;
     }
-    
-    private int minim(double a, double b)
-    {
-        if (a <= b) return (int) a;
-        else return (int) b;
-    }
-    
-    private int minimaDistancia()   // Calcula la distància mínima dels visors
-    {
-        return  minim(estat.distanciaVisors[ESQUERRA], minim(estat.distanciaVisors[CENTRAL], estat.distanciaVisors[DRETA]));
-    }
+
     
     /***************************************************
      *          ESQUIVAR PAREDES
@@ -189,6 +180,7 @@ public class Bitxo1 extends Agent
         ajustarVisores();       
         if(paredCerca()){
             if(inColissionFrontal()){
+                System.out.println(" colision !");
                 manejarColision();
             }else{
                 esquivar();
@@ -203,11 +195,35 @@ public class Bitxo1 extends Agent
     
     private boolean paredCerca(){
     
+        obtenerDistVisores();
+        
+        
+        ordenarVisoresDist();
+       
+ 
+        boolean paredCerca = false;
+        // Calcula cuántos grados tiene que girar
+        if(estat.distanciaVisors[visor_menor] < MIN_DIST_ESQ){  
+            try {
+                  calcularAnguloGiro();
+                  paredCerca = true;
+            } catch(Exception e){
+                
+            }                   
+        }
+        
+        return paredCerca;
+    }
+    
+    private void obtenerDistVisores(){
+        
         d_esq = estat.distanciaVisors[ESQUERRA];
         d_cen = estat.distanciaVisors[CENTRAL];
         d_dre = estat.distanciaVisors[DRETA];
-        
-        
+    }
+    
+    private void ordenarVisoresDist(){
+    
         visor_mayor = ESQUERRA;
         visor_menor = ESQUERRA;
         visor_medio = ESQUERRA + CENTRAL + DRETA;
@@ -223,37 +239,26 @@ public class Bitxo1 extends Agent
         }
         
         visor_medio = visor_medio - visor_mayor - visor_menor;
-       
- 
-        boolean paredCerca = false;
-        // Calcula cuántos grados tiene que girar
-        if(estat.distanciaVisors[visor_menor] < MIN_DIST_ESQ){  
-            try {
-                 double factorB = Math.abs((estat.distanciaVisors[visor_menor]*estat.distanciaVisors[visor_menor] + (estat.distanciaVisors[visor_medio] + estat.distanciaVisors[visor_mayor])/2)/(MIN_DIST_ESQ*MIN_DIST_ESQ + (estat.distanciaVisors[visor_medio]+estat.distanciaVisors[visor_mayor])/2));
-                  angulo = MIN_ANGLE_GIR + (int)((MAX_ANGLE_GIR-MIN_ANGLE_GIR)*(1-factorB));
-                  paredCerca = true;
-            } catch(Exception e){
-                
-            }                   
-        }
-        
-        return paredCerca;
+    }
+    
+    private void calcularAnguloGiro(){
+        double factorB = Math.abs((estat.distanciaVisors[visor_menor]*estat.distanciaVisors[visor_menor] + (estat.distanciaVisors[visor_medio] + estat.distanciaVisors[visor_mayor])/2)/(MIN_DIST_ESQ*MIN_DIST_ESQ + (estat.distanciaVisors[visor_medio]+estat.distanciaVisors[visor_mayor])/2));
+        angulo = MIN_ANGLE_GIR + (int)((MAX_ANGLE_GIR-MIN_ANGLE_GIR)*(1-factorB));
     }
     
     private void ajustarVisores(){
-        if(estat.distanciaVisors[CENTRAL] > 40){
+    
             if(estat.angleVisors == this.MAX_ANGLE_VISOR){
                 this.setAngleVisors(this.MIN_ANGLE_VISOR);
             }else{
                 this.setAngleVisors(this.MAX_ANGLE_VISOR);
             }
-        }else{
-            this.setAngleVisors(this.MAX_ANGLE_VISOR);
-        }
+
     }
     
     private boolean inColissionFrontal(){
     
+        if(estat.angleVisors == MIN_ANGLE_VISOR){
          boolean inColissionFrontal = false;
           for (int i = 0; i < estat.distanciaVisors.length; i++) {
                if(!inColissionFrontal && estat.distanciaVisors[i] <= 10){
@@ -261,6 +266,8 @@ public class Bitxo1 extends Agent
                }
           }
           return inColissionFrontal;
+        }
+        return false;
                
            
     }
@@ -269,7 +276,17 @@ public class Bitxo1 extends Agent
     private void manejarColision(){
       
                enrere();
-               esquivar();
+               obtenerDistVisores();
+               ordenarVisoresDist();
+               calcularAnguloGiro();
+               double deltaDist_EC = Math.abs(d_esq-d_cen);
+               double deltaDist_DC = Math.abs(d_dre-d_cen);
+               
+               if(deltaDist_EC < deltaDist_DC){ 
+                        gira(angulo); 
+                 }else{
+                        gira(-angulo);
+                 } 
                espera = MAX_VECES_COLISION;
 
     }
@@ -287,9 +304,7 @@ public class Bitxo1 extends Agent
     
     private void esquivar(){
       
-        
-      
-      
+    
       if(paredCerca()){
             double deltaDist_EC = Math.abs(d_esq-d_cen);
             double deltaDist_DC = Math.abs(d_dre-d_cen);
@@ -297,17 +312,15 @@ public class Bitxo1 extends Agent
             switch (visor_mayor) {
                 case CENTRAL:
                     
-                 if(deltaDist_EC - deltaDist_DC <20){
-                     gira(angulo);
-                 }else{   
-                    angulo = (int)Math.log(angulo);
-                   if(deltaDist_EC < deltaDist_DC){ 
-                        gira(angulo); 
-                    }else{
-                        gira(-angulo);
-                    }  
+                 if(Math.abs(deltaDist_EC - deltaDist_DC) <20){
+                     angulo = (int)Math.log(angulo);
                  }
-                    break;               
+                 if(deltaDist_EC < deltaDist_DC){ 
+                        gira(angulo); 
+                 }else{
+                        gira(-angulo);
+                 } 
+                 break;               
                 case ESQUERRA:
                     gira(angulo);
                     break;
