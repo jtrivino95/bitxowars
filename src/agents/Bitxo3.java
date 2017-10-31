@@ -15,16 +15,17 @@ public class Bitxo3 extends Agent
     static final int CENTRAL  = 1;
     static final int DRETA    = 2;
     
-    final int CERCA = 30;
     final int VELOCIDAD_LINEAL_POR_DEFECTO = 5;
     final int VELOCIDAD_ANGULAR_POR_DEFECTO = 5;
     final int DISTANCIA_VISORES_POR_DEFECTO = 300;
-    final int RECURSO_CERCANO = 60;
+    final int OBSTACULO_CERCANO = 60;
+    final int RECURSO_CERCANO = 100;
 
     private Estat estat;
     private int espera = 0;
     private int colisionesConsecutivas = 0;
     private Bonificacio recursoMasCercano;
+    private boolean vaAMirarRecurso = false;
 
     public Bitxo3(Agents pare) {
         super(pare, "Javi", "imatges/robotank3.gif");
@@ -38,6 +39,8 @@ public class Bitxo3 extends Agent
         setVelocitatLineal(VELOCIDAD_LINEAL_POR_DEFECTO);
         setVelocitatAngular(VELOCIDAD_LINEAL_POR_DEFECTO);
         espera = 0;
+        colisionesConsecutivas = 0;
+        vaAMirarRecurso = false;
     }
 
     @Override
@@ -55,24 +58,37 @@ public class Bitxo3 extends Agent
     private void evaluarEventos(){
         estat = estatCombat();
         
-        if(atascadisimo()){
+        //else if(enemigoDetectado())             perseguirEnemigo();
+        if(atascado()){
             hyperespai();
         }
-        else if(atascado()){
-            
+        else if(colisionOcurrida()){
+            enrere();
+            evitarChoque();
+            espera = 5;
+        }                          
+        else if(colisionConParedInminente()){
+            evitarChoque();
+            endavant();
+        }            
+        else if(recursoCercanoDetectado()){
+            mirarRecurso();
+            endavant();
         }
-        
-        //else if(enemigoDetectado())             perseguirEnemigo();
-        else if(colisionOcurrida())             gira(45);
-        else if(colisionConParedInminente())    evitarChoque();
-        else if(recursoCercanoDetectado())      conseguirRecurso();
-        
-        endavant();
+        else {
+            endavant();
+        }
         
     }
     
-    private void conseguirRecurso(){
+    private void mirarRecurso(){
         mira(recursoMasCercano.posicio.x, recursoMasCercano.posicio.y);
+        vaAMirarRecurso = true;
+    }
+    
+        private void conseguirRecurso(){
+        mira(recursoMasCercano.posicio.x, recursoMasCercano.posicio.y);
+        vaAMirarRecurso = true;
     }
     
     
@@ -96,12 +112,7 @@ public class Bitxo3 extends Agent
     }
     
     private boolean atascado(){
-        boolean colision = colisionesConsecutivas >= 50;
-        return colision;
-    }
-    
-    private boolean atascadisimo(){
-        boolean colision = colisionesConsecutivas >= 60;
+        boolean colision = colisionesConsecutivas >= 10;
         return colision;
     }
     
@@ -110,8 +121,8 @@ public class Bitxo3 extends Agent
         for (int i = 0; i < 3; i++) {
             if(
                     estat.estatVisor[i] &&
-                    estat.objecteVisor[i] == PARET &&
-                    estat.distanciaVisors[i] <= CERCA
+                    //estat.objecteVisor[i] == PARET &&
+                    estat.distanciaVisors[i] <= OBSTACULO_CERCANO
                     ){
                 return true;
             }
@@ -122,6 +133,10 @@ public class Bitxo3 extends Agent
     
     private boolean colisionConBombaInminente(){
         return false;
+    }
+    
+    private boolean visorCentralDetectaPared(){
+        return estat.objecteVisor[CENTRAL] == PARET;
     }
     
     private boolean recursoCercanoDetectado(){
@@ -159,36 +174,45 @@ public class Bitxo3 extends Agent
         int derecha = -10, izquierda = 20;
         
         for (int i = 0; i < estat.distanciaVisors.length; i++) {
-            if(estat.distanciaVisors[i] > CERCA) distanciaCerca[i] = true;
+            if(estat.distanciaVisors[i] > OBSTACULO_CERCANO) distanciaCerca[i] = true;
         }
         
-        if(distanciaCerca[0] && distanciaCerca[1] && !distanciaCerca[2]) s = situacion.D;
-        else if(distanciaCerca[0] && !distanciaCerca[1] && distanciaCerca[2]) s = situacion.C;
-        else if(distanciaCerca[0] && !distanciaCerca[1] && !distanciaCerca[2]) s = situacion.CD;
-        else if(!distanciaCerca[0] && distanciaCerca[1] && distanciaCerca[2]) s = situacion.I;
-        else if(!distanciaCerca[0] && distanciaCerca[1] && !distanciaCerca[2]) s = situacion.ID;
-        else if(!distanciaCerca[0] && !distanciaCerca[1] && distanciaCerca[2]) s = situacion.IC;
-        else if(!distanciaCerca[0] && !distanciaCerca[1] && !distanciaCerca[2]) s = situacion.ICD;
+        if     (distanciaCerca[ESQUERRA] && distanciaCerca[CENTRAL] && !distanciaCerca[DRETA]) s = situacion.ICD;     // 111
+        else if(distanciaCerca[ESQUERRA] && distanciaCerca[CENTRAL] && !distanciaCerca[DRETA]) s = situacion.IC;     // 110
+        else if(distanciaCerca[ESQUERRA] && !distanciaCerca[CENTRAL] && distanciaCerca[DRETA]) s = situacion.ID;     // 101
+        else if(distanciaCerca[ESQUERRA] && !distanciaCerca[CENTRAL] && !distanciaCerca[DRETA]) s = situacion.I;    // 100
+        else if(!distanciaCerca[ESQUERRA] && distanciaCerca[CENTRAL] && distanciaCerca[DRETA]) s = situacion.CD;     // 011
+        else if(!distanciaCerca[ESQUERRA] && distanciaCerca[CENTRAL] && !distanciaCerca[DRETA]) s = situacion.C;    // 010
+        else if(!distanciaCerca[ESQUERRA] && !distanciaCerca[CENTRAL] && distanciaCerca[DRETA]) s = situacion.D;    // 001
+        else if(!distanciaCerca[ESQUERRA] && !distanciaCerca[CENTRAL] && !distanciaCerca[DRETA]) s = situacion.L;   // 000
+        
         
         switch(s){
             case I:
+                System.out.println("Gira derecha");
                 gira(derecha);
                 break;
             case IC:
+                System.out.println("Gira derecha");
                 gira(derecha);
-                break;
+                break; 
             case D:
+                System.out.println("Gira izquierda");
                 gira(izquierda);
                 break;
             case C:
+                System.out.println("Gira izquierda");
                 gira(izquierda);
                 break;
             case CD:
+                System.out.println("Gira izquierda");
                 gira(izquierda);
                 break;
             case ID:
+                System.out.println("Gira izquierda");
                 gira(izquierda*2);
             case ICD:
+                System.out.println("Gira izquierda");
                 gira(izquierda*2);
                 break;
             case L:
