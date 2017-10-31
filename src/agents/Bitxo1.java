@@ -62,7 +62,7 @@ public class Bitxo1 extends Agent
     private final int BITXO_LADO = 25; 
     private final int BITXO_ESPACIO = 35; 
     private final int MIN_DIST_ESQ = BITXO_LADO + BITXO_ESPACIO;
-    private final int MAX_ANGLE_GIR = 30;
+    private final int MAX_ANGLE_GIR = 40;
     private final int MIN_ANGLE_GIR = 1;
     private final int MAX_VECES_COLISION = 5;  
     private final int MAX_ANGLE_VISOR = 20;
@@ -114,7 +114,7 @@ public class Bitxo1 extends Agent
        
         estat = estatCombat();
         
-        //this.activaEscut();
+        boolean hayBalas = this.estat.bales != 0;
         
         if(prev_impactesRebuts != estat.impactesRebuts && prev_impactesRebuts!=3) {
 //            if(estat.hyperespaiDisponibles > 0){
@@ -127,11 +127,13 @@ public class Bitxo1 extends Agent
         }
         
         if(mirandoEnemigo  && estat.objecteVisor[CENTRAL] == NAU && estat.distanciaVisors[CENTRAL] < estat.distanciaVisor ){
+            if(hayBalas){
                 if(estat.perforadores > 0){
                     this.perforadora();
                 }else{
                     this.dispara();
                 }
+            }
         }
         
                     
@@ -144,7 +146,7 @@ public class Bitxo1 extends Agent
             if (mirandoRecurso ){
                 endavant();
             }          
-            if(recursoEncontrado()){
+            if(recursoEncontrado(hayBalas)){
                 mira(recurso_x,recurso_y);
                 mirandoRecurso = true;
             }else{
@@ -155,7 +157,7 @@ public class Bitxo1 extends Agent
         
         
         
-        if(enemigoEncontrado()){
+        if(enemigoEncontrado() && hayBalas){
                 mira(enemigo_x,enemigo_y);
                 System.out.println(enemigo_x + " , "+enemigo_y);
                 mirandoEnemigo = true;
@@ -180,7 +182,6 @@ public class Bitxo1 extends Agent
         ajustarVisores();       
         if(paredCerca()){
             if(inColissionFrontal()){
-                System.out.println(" colision !");
                 manejarColision();
             }else{
                 esquivar();
@@ -350,7 +351,7 @@ public class Bitxo1 extends Agent
      *          OBTENER RECURSOS
      * ************************************************/
     
-    private boolean recursoEncontrado(){
+    private boolean recursoEncontrado(boolean hayBalas){
         
             int tipus , bx ,by ,mx ,my ;
             int min_x = -1,min_y = -1;
@@ -367,20 +368,21 @@ public class Bitxo1 extends Agent
                 mx = estat.posicio.x;
                 my = estat.posicio.y;
                 //si no es mina calcular distancia y actualizar min_dist
-                if(tipus != Agent.MINA){
-                    int distX = Math.abs(mx-bx);
-                    int distY = Math.abs(my-by);
-                    double distRecurso = distX*distX+distY*distY;
-                    distRecurso = Math.sqrt(distRecurso);
-                    if(distX*distY < min_distX*min_distY && distRecurso < MAX_DIST_REC){
-                        encontrado = true;
-                        min_distX = distX;
-                        min_distY = distY;
-                        min_x = bx;
-                        min_y = by;
-                    }
-                }
+                
+                        int distX = Math.abs(mx-bx);
+                        int distY = Math.abs(my-by);
+                        double distRecurso = distX*distX+distY*distY;
+                        distRecurso = Math.sqrt(distRecurso);
+                        if(distX*distY < min_distX*min_distY && distRecurso < MAX_DIST_REC){
+                            encontrado = ((hayBalas && tipus != Agent.MINA) || (!hayBalas && tipus == Agent.RECURSOS));
+                            min_distX = distX;
+                            min_distY = distY;
+                            min_x = bx;
+                            min_y = by;
+                        }
             }
+            
+            
             recurso_x = min_x;
             recurso_y = min_y;
             return encontrado;
