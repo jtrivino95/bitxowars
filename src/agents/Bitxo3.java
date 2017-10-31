@@ -15,12 +15,14 @@ public class Bitxo3 extends Agent
     static final int CENTRAL  = 1;
     static final int DRETA    = 2;
     
-    final int CERCA = 40;
+    final int CERCA = 30;
     final int VELOCIDAD_LINEAL_POR_DEFECTO = 5;
+    final int VELOCIDAD_ANGULAR_POR_DEFECTO = 5;
+    final int DISTANCIA_VISORES_POR_DEFECTO = 300;
 
     private Estat estat;
-    private int repetir = 0;
-    private int colisionTotalConsecutivas = 0;
+    private int espera = 0;
+    private int colisionesConsecutivas = 0;
 
     public Bitxo3(Agents pare) {
         super(pare, "Javi", "imatges/robotank3.gif");
@@ -30,52 +32,45 @@ public class Bitxo3 extends Agent
     public void inicia()
     {
         setAngleVisors(5);
-        setDistanciaVisors(400);
+        setDistanciaVisors(DISTANCIA_VISORES_POR_DEFECTO);
         setVelocitatLineal(VELOCIDAD_LINEAL_POR_DEFECTO);
         setVelocitatAngular(VELOCIDAD_LINEAL_POR_DEFECTO);
+        espera = 0;
     }
 
     @Override
     public void avaluaComportament(){
-        inicia();
         
-        if(repetir > 0){
-            repetir--;
+        if(espera > 0){
+            espera--;
             return;
         }
         
+        atura();
         evaluarEventos();
-        endavant();
-        
     }
     
     private void evaluarEventos(){
         estat = estatCombat();
         
-        if(atascado()){
-            if(estat.hyperespaiDisponibles > 0)
-                hyperespai();
-            else {
-                // TODO: PROBLEMONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-            }
+        if(atascadisimo()){
+            hyperespai();
+        }
+        else if(atascado()){
+            enrere();
         }
         
-        else if(colisionTotal()){
-            setVelocitatLineal(7);
-            setVelocitatAngular(7);
-            gira(45);
-            setVelocitatLineal(VELOCIDAD_LINEAL_POR_DEFECTO);
-            setVelocitatAngular(VELOCIDAD_LINEAL_POR_DEFECTO);
-        }
+        else if(enemigoDetectado())             perseguirEnemigo();
+        else if(colisionOcurrida())             gira(45);
+        else if(colisionConParedInminente())    evitarChoque();
+        else if(colisionConBombaInminente())    evitarChoque();
+        else                                    meta();
         
-        else if(colisionInminente()){
-            evitarChoque();
-        }
-        
-        else if(disparoInminente()){
-            esquivarDisparos();
-        }
-        
+    }
+    
+    private void meta(){
+        if (estat.objecteVisor[CENTRAL] == NAU) dispara();
+        endavant();
     }
     
     
@@ -83,22 +78,32 @@ public class Bitxo3 extends Agent
      * Event triggers 
      */
     
-    private boolean colisionTotal(){
-        
+    private boolean enemigoDetectado(){
+        return estat.veigAlgunEnemic;
+    }
+    
+    private boolean colisionOcurrida(){
         if(estat.enCollisio){
-            colisionTotalConsecutivas++;
+            colisionesConsecutivas++;
+            System.out.println("Colision!");
             return true;
         } else {
-            colisionTotalConsecutivas = 0;
+            colisionesConsecutivas = 0;
             return false;
         }
     }
     
     private boolean atascado(){
-        return colisionTotalConsecutivas > 60;
+        boolean colision = colisionesConsecutivas >= 50;
+        return colision;
     }
     
-    private boolean colisionInminente(){
+    private boolean atascadisimo(){
+        boolean colision = colisionesConsecutivas >= 60;
+        return colision;
+    }
+    
+    private boolean colisionConParedInminente(){
         
         for (int i = 0; i < 3; i++) {
             if(
@@ -113,15 +118,9 @@ public class Bitxo3 extends Agent
         return false;
     }
     
-    private boolean disparoInminente(){
+    private boolean colisionConBombaInminente(){
         return false;
     }
-    
-    private boolean enemigoCerca(){
-        return false;
-    }
-    
-    
     
     
     /*
@@ -131,6 +130,7 @@ public class Bitxo3 extends Agent
     private void evitarChoque(){
         boolean distanciaCerca[] = {false, false, false};
         situacion s = situacion.L;
+        int derecha = -10, izquierda = 20;
         
         for (int i = 0; i < estat.distanciaVisors.length; i++) {
             if(estat.distanciaVisors[i] > CERCA) distanciaCerca[i] = true;
@@ -144,50 +144,69 @@ public class Bitxo3 extends Agent
         else if(!distanciaCerca[0] && !distanciaCerca[1] && distanciaCerca[2]) s = situacion.IC;
         else if(!distanciaCerca[0] && !distanciaCerca[1] && !distanciaCerca[2]) s = situacion.ICD;
         
-        atura();
-        
         switch(s){
             case I:
-                gira(-10);
-                break;
-            case D:
-                gira(10);
-                break;
-            case C:
-                gira(-10);
+                gira(derecha);
                 break;
             case IC:
-                gira(-10);
+                gira(derecha);
+                break;
+            case D:
+                gira(izquierda);
+                break;
+            case C:
+                gira(izquierda);
                 break;
             case CD:
-                gira(10);
+                gira(izquierda);
                 break;
+            case ID:
+                gira(izquierda*2);
             case ICD:
-                gira(10);
+                gira(izquierda*2);
                 break;
             case L:
                 break;
         }
     }
-    
-    private void esquivarDisparos(){
+    private void perseguirEnemigo(){
+        // cercar quin és l'enemic que veig més proper:
+        int mesProper = -1;
+        double distanciaMesProper = 9999;  
+        double distancia;
+
+        for (int n = 0; n < estat.numBitxos; n++)
+        {
+            if (n != estat.id) // jo no compt !
+            {
+                if (estat.veigEnemic[n]) // el veig
+                {
+                    distancia = estat.posicio.distancia(estat.posicioEnemic[n]);  // calcul a quina distància es troba
+
+                    if (distancia < distanciaMesProper)  // n'he trobat un de més proper
+                    {
+                        mesProper = n;
+                        distanciaMesProper = distancia;
+                    }
+                }
+            }
+        }
+
+        int sector = estat.sector[mesProper];
+
+        if (sector == 2 || sector == 3)  // ben visible, puc saber la seva posició
+        {
+            mira(estat.posicioEnemic[mesProper].x, estat.posicioEnemic[mesProper].y);
+        }
+        else if (sector == 1)   // gira per situar el bitxo dins els sectors 2 o 3
+        {
+            dreta();
+        }
+        else
+        {
+            esquerra();
+        }
         
-    }
-    
-    private void alejarseDeEnemigo(){
-        
-    }
-    
-    
-    
-    private int minim(double a, double b)
-    {
-        if (a <= b) return (int) a;
-        else return (int) b;
-    }
-    
-    private int minimaDistancia()   // Calcula la distància mínima dels visors
-    {
-        return  minim(estat.distanciaVisors[ESQUERRA], minim(estat.distanciaVisors[CENTRAL], estat.distanciaVisors[DRETA]));
+        if (estat.objecteVisor[CENTRAL] == NAU) dispara();
     }
 }
