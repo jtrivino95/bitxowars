@@ -19,10 +19,12 @@ public class Bitxo3 extends Agent
     final int VELOCIDAD_LINEAL_POR_DEFECTO = 5;
     final int VELOCIDAD_ANGULAR_POR_DEFECTO = 5;
     final int DISTANCIA_VISORES_POR_DEFECTO = 300;
+    final int RECURSO_CERCANO = 60;
 
     private Estat estat;
     private int espera = 0;
     private int colisionesConsecutivas = 0;
+    private Bonificacio recursoMasCercano;
 
     public Bitxo3(Agents pare) {
         super(pare, "Javi", "imatges/robotank3.gif");
@@ -57,20 +59,20 @@ public class Bitxo3 extends Agent
             hyperespai();
         }
         else if(atascado()){
-            enrere();
+            
         }
         
-        else if(enemigoDetectado())             perseguirEnemigo();
+        //else if(enemigoDetectado())             perseguirEnemigo();
         else if(colisionOcurrida())             gira(45);
         else if(colisionConParedInminente())    evitarChoque();
-        else if(colisionConBombaInminente())    evitarChoque();
-        else                                    meta();
+        else if(recursoCercanoDetectado())      conseguirRecurso();
+        
+        endavant();
         
     }
     
-    private void meta(){
-        if (estat.objecteVisor[CENTRAL] == NAU) dispara();
-        endavant();
+    private void conseguirRecurso(){
+        mira(recursoMasCercano.posicio.x, recursoMasCercano.posicio.y);
     }
     
     
@@ -120,6 +122,30 @@ public class Bitxo3 extends Agent
     
     private boolean colisionConBombaInminente(){
         return false;
+    }
+    
+    private boolean recursoCercanoDetectado(){
+        double distanciaRecursoMasCercano = 99999.0;
+        recursoMasCercano = null;
+            
+        for (Bonificacio bonificacion : estat.bonificacions) {
+            if (bonificacion.tipus == MINA) continue;
+            
+            // Calculamos hipotenusa
+            int distX = Math.abs(estat.posicio.x - bonificacion.posicio.x);
+            int distY = Math.abs(estat.posicio.y - bonificacion.posicio.y);
+            double distanciaRecursoActual = Math.sqrt(distX*distX + distY*distY);
+            
+            if(
+                    distanciaRecursoActual <= RECURSO_CERCANO &&
+                    distanciaRecursoActual < distanciaRecursoMasCercano
+            ){
+                distanciaRecursoMasCercano = distanciaRecursoActual; 
+                recursoMasCercano = bonificacion;
+            }
+        }
+        
+        return recursoMasCercano != null;
     }
     
     
@@ -209,4 +235,9 @@ public class Bitxo3 extends Agent
         
         if (estat.objecteVisor[CENTRAL] == NAU) dispara();
     }
+    
+    /**
+     * Funciones auxiliares
+     */
+   
 }
