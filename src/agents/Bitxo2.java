@@ -36,7 +36,6 @@ public class Bitxo2 extends Agent
     @Override
     public void avaluaComportament()
     {
-        if(true)return;
         boolean enemic;
 
         enemic = false;

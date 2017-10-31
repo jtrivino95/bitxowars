@@ -105,7 +105,6 @@ public class Bitxo1 extends Agent
     public void avaluaComportament()
             
     {
-        if(true)return;
        
         if(espera > 0){
             espera--;
