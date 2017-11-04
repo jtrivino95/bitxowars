@@ -30,7 +30,7 @@ public class Bitxo20 extends Agent
     private int giroActual;
 
     public Bitxo20(Agents pare) {
-        super(pare, "Lover", "imatges/corasao.png");
+        super(pare, "Love Warrior", "imatges/corasao.gif");
     }
 
     @Override
@@ -77,14 +77,13 @@ public class Bitxo20 extends Agent
             atacarEnemigoMasCercano();
         }
         else if(balaCercanaDetectada() && balaAcercandose()){
-            alejarseDeBala();
+            avanzarEnZigZag();
         }
         
         /* Movimiento */
         else if(colisionOcurrida()){
             enrere();
-            evitarChoque();
-            espera = 8;
+            espera = 15;
         }                          
         else if(colisionConParedInminente()){
             evitarChoque();
@@ -95,17 +94,7 @@ public class Bitxo20 extends Agent
             endavant();
         }
         else {
-            // Se mueve hacia la derecha o hacia la izquierda
-            // de forma aleatoria
-            if(girosConsecutivos > 20){
-                if(((int)(Math.random()*100 % 2) == 0)) giroActual = -1;
-                else                                    giroActual = 1;
-                girosConsecutivos = 0;
-            }
-            
-            girosConsecutivos++;
-            gira(giroActual);
-            endavant();
+            avanzarEnZigZag();
         }
         
         actualizarMemoria();
@@ -136,7 +125,6 @@ public class Bitxo20 extends Agent
     }
     
     private boolean balaAcercandose(){
-        if(prev_distanciaBalaEnemiga < estat.distanciaBalaEnemiga) System.out.println("Bala acercandose");
         return prev_distanciaBalaEnemiga < estat.distanciaBalaEnemiga;
     }
     
@@ -180,7 +168,6 @@ public class Bitxo20 extends Agent
     private boolean recursoCercanoDetectado(){
         double distanciaRecursoMasCercano = Integer.MAX_VALUE;
         recursoMasCercano = null;
-        Bonificacio escudoMasCercano = null;
             
         for (Bonificacio bonificacio : estat.bonificacions) {
             if (bonificacio.tipus == MINA) continue;
@@ -195,9 +182,6 @@ public class Bitxo20 extends Agent
             }
         }
         
-        // Priorizamos escudos
-        //if(escudoMasCercano != null) recursoMasCercano = escudoMasCercano;
-        
         return recursoMasCercano != null;
     }
     
@@ -207,6 +191,7 @@ public class Bitxo20 extends Agent
      */
     
     private enum situacion { L, I, D, C, IC, ID, CD, ICD }
+    
     private void evitarChoque(){
         boolean distanciaCerca[] = {false, false, false};
         situacion s = situacion.L;
@@ -264,15 +249,19 @@ public class Bitxo20 extends Agent
         endavant();
     }
     
-    private void alejarseDeBala(){
-        gira(-5);
+    private void avanzarEnZigZag(){
+        // Se mueve hacia la derecha o hacia la izquierda
+        // de forma aleatoria
+        if(girosConsecutivos >= 10){
+            if(((int)(Math.random()*100 % 2) == 0)) giroActual = -2;
+            else                                    giroActual = 2;
+            girosConsecutivos = 0;
+        }
+
+        girosConsecutivos++;
+        gira(giroActual);
         endavant();
     }
-    
-    
-    /**
-     * Funciones auxiliares
-     */
     
     private void actualizarMemoria(){
         prev_impactesRebuts = estat.impactesRebuts;
