@@ -70,15 +70,14 @@ public class Bitxo20 extends Agent
         }
         
         /* Combate */
-        else if(balaCercanaDetectada() && balaAcercandose()){
-            alejarseDeBala();
-        }
         else if(disparoRecibido() && aPuntoDeMorir() && estat.hyperespaiDisponibles > 0){
             hyperespai();
         }
-        
         else if(enemigoDetectado() && hayBalas()){
             atacarEnemigoMasCercano();
+        }
+        else if(balaCercanaDetectada() && balaAcercandose()){
+            alejarseDeBala();
         }
         
         /* Movimiento */
@@ -96,18 +95,16 @@ public class Bitxo20 extends Agent
             endavant();
         }
         else {
-            boolean esquerra = ((int)(Math.random()*100 % 2) == 0);
+            // Se mueve hacia la derecha o hacia la izquierda
+            // de forma aleatoria
             if(girosConsecutivos > 20){
-                if(esquerra) giroActual = -1;
-                else         giroActual = 1;
+                if(((int)(Math.random()*100 % 2) == 0)) giroActual = -1;
+                else                                    giroActual = 1;
                 girosConsecutivos = 0;
-                System.out.println(" ");
             }
             
             girosConsecutivos++;
-            System.out.println(giroActual);
             gira(giroActual);
-            
             endavant();
         }
         
@@ -139,6 +136,7 @@ public class Bitxo20 extends Agent
     }
     
     private boolean balaAcercandose(){
+        if(prev_distanciaBalaEnemiga < estat.distanciaBalaEnemiga) System.out.println("Bala acercandose");
         return prev_distanciaBalaEnemiga < estat.distanciaBalaEnemiga;
     }
     
@@ -268,7 +266,7 @@ public class Bitxo20 extends Agent
     
     private void alejarseDeBala(){
         gira(-5);
-        enrere();
+        endavant();
     }
     
     
