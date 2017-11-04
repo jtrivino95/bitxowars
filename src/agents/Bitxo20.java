@@ -1,6 +1,6 @@
 package agents;
 
-public class Bitxo3 extends Agent
+public class Bitxo20 extends Agent
 {
     static final boolean DEBUG = false;
     
@@ -15,18 +15,22 @@ public class Bitxo3 extends Agent
     static final int DISTANCIA_VISORES_POR_DEFECTO = 300;
     static final int ANGULO_VISORES_POR_DEFECTO = 8;
     static final int OBSTACULO_CERCANO = 60;
-    static final int RECURSO_CERCANO = 80;
+    static final int RECURSO_CERCANO = 90;
+    static final int BALA_CERCANA = 40;
     static final int MAX_DIST_ENEMIGO = 100;
 
     private Estat estat;
-    private int espera = 0;
-    private int colisionesConsecutivas = 0;
+    private int espera;
+    private int colisionesConsecutivas;
     private Bonificacio recursoMasCercano;
-    private Punt        enemigoMasCercano;
-    private int prev_impactesRebuts = 0;
+    private Punt enemigoMasCercano;
+    private int prev_impactesRebuts;
+    private int prev_distanciaBalaEnemiga;
+    private int girosConsecutivos;
+    private int giroActual;
 
-    public Bitxo3(Agents pare) {
-        super(pare, "Javi", "imatges/robotank3.gif");
+    public Bitxo20(Agents pare) {
+        super(pare, "Lover", "imatges/corasao.png");
     }
 
     @Override
@@ -40,6 +44,9 @@ public class Bitxo3 extends Agent
         colisionesConsecutivas = 0;
         recursoMasCercano = null;
         prev_impactesRebuts = 0;
+        prev_distanciaBalaEnemiga = Integer.MAX_VALUE;
+        girosConsecutivos = 0;
+        giroActual = 0;
     }
 
     @Override
@@ -56,13 +63,16 @@ public class Bitxo3 extends Agent
     private void evaluarEventos(){
         estat = estatCombat();
         
-        if(disparoRecibido() || enemigoDetectado()) activaEscut();
+        if(disparoRecibido() || (balaAcercandose() && aPuntoDeMorir())) activaEscut();
         
         if(atascado()){
             hyperespai();
         }
         
         /* Combate */
+        else if(balaCercanaDetectada() && balaAcercandose()){
+            alejarseDeBala();
+        }
         else if(disparoRecibido() && aPuntoDeMorir() && estat.hyperespaiDisponibles > 0){
             hyperespai();
         }
@@ -75,7 +85,7 @@ public class Bitxo3 extends Agent
         else if(colisionOcurrida()){
             enrere();
             evitarChoque();
-            espera = 7;
+            espera = 8;
         }                          
         else if(colisionConParedInminente()){
             evitarChoque();
@@ -86,6 +96,18 @@ public class Bitxo3 extends Agent
             endavant();
         }
         else {
+            boolean esquerra = ((int)(Math.random()*100 % 2) == 0);
+            if(girosConsecutivos > 20){
+                if(esquerra) giroActual = -1;
+                else         giroActual = 1;
+                girosConsecutivos = 0;
+                System.out.println(" ");
+            }
+            
+            girosConsecutivos++;
+            System.out.println(giroActual);
+            gira(giroActual);
+            
             endavant();
         }
         
@@ -116,12 +138,16 @@ public class Bitxo3 extends Agent
             return enemigoMasCercano != null;
     }
     
+    private boolean balaAcercandose(){
+        return prev_distanciaBalaEnemiga < estat.distanciaBalaEnemiga;
+    }
+    
     private boolean disparoRecibido(){
         return estat.impactesRebuts > prev_impactesRebuts;
     }
     
-    private boolean balaDetectada(){
-        return estat.balaEnemigaDetectada;
+    private boolean balaCercanaDetectada(){
+        return estat.balaEnemigaDetectada && estat.distanciaBalaEnemiga < BALA_CERCANA;
     }
     
     private boolean aPuntoDeMorir(){
@@ -130,7 +156,6 @@ public class Bitxo3 extends Agent
     
     private boolean colisionOcurrida(){
         if(estat.enCollisio){
-            System.out.println("colision");
             colisionesConsecutivas++;
             return true;
         } else {
@@ -164,10 +189,6 @@ public class Bitxo3 extends Agent
             
             double distanciaRecursoActual = estat.posicio.distancia(bonificacio.posicio);
             
-            if (distanciaRecursoActual <= RECURSO_CERCANO && bonificacio.tipus == ESCUT){
-                escudoMasCercano = bonificacio;
-            }
-            
             if(distanciaRecursoActual <= RECURSO_CERCANO && 
                     distanciaRecursoActual < distanciaRecursoMasCercano)
             {
@@ -177,7 +198,7 @@ public class Bitxo3 extends Agent
         }
         
         // Priorizamos escudos
-        if(escudoMasCercano != null) recursoMasCercano = escudoMasCercano;
+        //if(escudoMasCercano != null) recursoMasCercano = escudoMasCercano;
         
         return recursoMasCercano != null;
     }
@@ -245,6 +266,11 @@ public class Bitxo3 extends Agent
         endavant();
     }
     
+    private void alejarseDeBala(){
+        gira(-5);
+        enrere();
+    }
+    
     
     /**
      * Funciones auxiliares
@@ -252,6 +278,7 @@ public class Bitxo3 extends Agent
     
     private void actualizarMemoria(){
         prev_impactesRebuts = estat.impactesRebuts;
+        prev_distanciaBalaEnemiga = estat.distanciaBalaEnemiga;
     }
    
 }
