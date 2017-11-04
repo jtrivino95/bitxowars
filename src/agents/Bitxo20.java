@@ -10,14 +10,14 @@ public class Bitxo20 extends Agent
     static final int ESQUERRA = 0;
     static final int CENTRAL  = 1;
     static final int DRETA    = 2;
-    static final int VELOCIDAD_LINEAL_POR_DEFECTO = 4;
-    static final int VELOCIDAD_ANGULAR_POR_DEFECTO = 5;
+    static final int VELOCIDAD_LINEAL_POR_DEFECTO = 6;
+    static final int VELOCIDAD_ANGULAR_POR_DEFECTO = 6;
     static final int DISTANCIA_VISORES_POR_DEFECTO = 300;
-    static final int ANGULO_VISORES_POR_DEFECTO = 8;
+    static final int ANGULO_VISORES_POR_DEFECTO = 10;
     static final int OBSTACULO_CERCANO = 60;
-    static final int RECURSO_CERCANO = 90;
+    static final int RECURSO_CERCANO = 80;
     static final int BALA_CERCANA = 40;
-    static final int MAX_DIST_ENEMIGO = 100;
+    static final int ENEMIGO_CERCANO = 100;
 
     private Estat estat;
     private int espera;
@@ -63,10 +63,29 @@ public class Bitxo20 extends Agent
     private void evaluarEventos(){
         estat = estatCombat();
         
-        if(disparoRecibido() || (balaAcercandose() && aPuntoDeMorir())) activaEscut();
+        if(disparoRecibido() ||
+                (balaCercanaDetectada() && balaAcercandose() && aPuntoDeMorir())){
+            activaEscut();
+        }
+        
+        if(estat.fuel < 5000){
+            setVelocitatLineal(5);
+            setVelocitatAngular(5);
+        }
+        else if(estat.fuel < 3500){
+            setVelocitatLineal(4);
+            setVelocitatLineal(4);
+        }
+        else if(estat.fuel < 2000){
+            setVelocitatLineal(2);
+            setVelocitatLineal(2);
+        }
+        
+        
         
         if(atascado()){
             hyperespai();
+            avança();
         }
         
         /* Combate */
@@ -76,14 +95,11 @@ public class Bitxo20 extends Agent
         else if(enemigoDetectado() && hayBalas()){
             atacarEnemigoMasCercano();
         }
-        else if(balaCercanaDetectada() && balaAcercandose()){
-            avanzarEnZigZag();
-        }
         
         /* Movimiento */
         else if(colisionOcurrida()){
             enrere();
-            espera = 15;
+            espera = 10;
         }                          
         else if(colisionConParedInminente()){
             evitarChoque();
@@ -151,7 +167,7 @@ public class Bitxo20 extends Agent
     }
     
     private boolean atascado(){
-        return colisionesConsecutivas >= 6;
+        return colisionesConsecutivas >= 4;
     }
     
     private boolean colisionConParedInminente(){
