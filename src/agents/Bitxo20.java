@@ -16,7 +16,7 @@ public class Bitxo20 extends Agent
     static final int ANGULO_VISORES_POR_DEFECTO = 10;
     static final int OBSTACULO_CERCANO = 60;
     static final int RECURSO_CERCANO = 80;
-    static final int BALA_CERCANA = 40;
+    static final int BALA_CERCANA = 80;
     static final int ENEMIGO_CERCANO = 100;
 
     private Estat estat;
@@ -64,19 +64,27 @@ public class Bitxo20 extends Agent
         estat = estatCombat();
         
         if(disparoRecibido() ||
-                (balaCercanaDetectada() && balaAcercandose() && aPuntoDeMorir())){
+                (balaCercanaDetectada() && balaAcercandose())){
             activaEscut();
         }
         
-        if(estat.fuel < 5000){
+        if(estat.fuel > 7500){
+            setVelocitatLineal(6);
+            setVelocitatAngular(6);
+        }
+        else if(estat.fuel > 5000){
             setVelocitatLineal(5);
             setVelocitatAngular(5);
         }
-        else if(estat.fuel < 3500){
+        else if(estat.fuel > 3500){
             setVelocitatLineal(4);
-            setVelocitatLineal(4);
+            setVelocitatAngular(4);
         }
-        else if(estat.fuel < 2000){
+        else if(estat.fuel > 2000){
+            setVelocitatLineal(3);
+            setVelocitatLineal(3);
+        }
+        else {
             setVelocitatLineal(2);
             setVelocitatLineal(2);
         }
@@ -89,8 +97,9 @@ public class Bitxo20 extends Agent
         }
         
         /* Combate */
-        else if(disparoRecibido() && aPuntoDeMorir() && estat.hyperespaiDisponibles > 0){
+        else if(aPuntoDeMorir() && disparoRecibido() && estat.hyperespaiDisponibles > 0){
             hyperespai();
+            avança();
         }
         else if(enemigoDetectado() && hayBalas()){
             atacarEnemigoMasCercano();
@@ -167,7 +176,7 @@ public class Bitxo20 extends Agent
     }
     
     private boolean atascado(){
-        return colisionesConsecutivas >= 4;
+        return colisionesConsecutivas >= 7;
     }
     
     private boolean colisionConParedInminente(){
@@ -268,9 +277,9 @@ public class Bitxo20 extends Agent
     private void avanzarEnZigZag(){
         // Se mueve hacia la derecha o hacia la izquierda
         // de forma aleatoria
-        if(girosConsecutivos >= 10){
-            if(((int)(Math.random()*100 % 2) == 0)) giroActual = -2;
-            else                                    giroActual = 2;
+        if(girosConsecutivos >= 20){
+            if(((int)(Math.random()*100 % 2) == 0)) giroActual = -1;
+            else                                    giroActual = 1;
             girosConsecutivos = 0;
         }
 
